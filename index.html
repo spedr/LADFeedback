@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<html>
+<script src="https://d3js.org/d3.v5.min.js"></script>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script src="https://unpkg.com/mathjs@6.2.3/dist/math.min.js"></script>
+
+<style>
+.inner {
+  width: 50%;
+  margin: 0 auto;
+}
+
+.fade-in {
+	opacity: 1;
+	animation-name: fadeInOpacity;
+	animation-iteration-count: 1;
+	animation-timing-function: ease-in;
+	animation-duration: 2s;
+}
+
+@keyframes fadeInOpacity {
+	0% {
+		opacity: 0;
+	}
+	100% {
+		opacity: 1;
+	}
+}
+
+</style>
+
+<head>
+<button onclick="initialize()">Initialize</button>
+<button onclick="plot()">Plot</button>
+<form id="myForm">
+  <select id="selectNumber">
+    <option>Choose an user</option>
+  </select>
+</form>
+</head>
+
+<div id="plotly-div" class=inner></div>
+
+
+<script type="text/javascript">
+  function initialize(){
+    d3.csv("forum.csv").then(function(data) {
+      ulist = []
+      for(var i=0;i<data.length;i++) {ulist.push(data[i].username)}
+      var select = document.getElementById("selectNumber");
+      for(var i = 0; i < ulist.length; i++) {
+        var opt = ulist[i];
+        var el = document.createElement("option");
+        el.textContent = opt;
+        el.value = opt;
+        select.appendChild(el);
+      }
+    });
+  }
+
+
+  function plot(){
+    d3.csv("forum.csv").then(function(data) {
+      domain = ['0%', '5%', '10%', '15%', '20%', '25%', '30%', '35%', '40%', '45%', '50%', '55%', '60%', '65%', '70%', '75%', '80%', '85%', '90%', '95%']
+      //domain = [0, 0.05, 0.010, 0.015, 0.020, 0.025, 0.030, 0.035, 0.040, 0.045, 0.050, 0.055, 0.060, 0.065, 0.070, 0.075, 0.080, 0.085, 0.090, 0.095]
+      domain_arrow = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95]
+      var val_list = []
+      for(var i = data.length -1;i>0;i--){
+        val_list.push(data[i].forum_interactions)
+      }
+      var quantile = math.quantileSeq(val_list,  19, true)
+      var intervals = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+      console.log(quantile)
+      for (var i = 0; i < val_list.length; i++){
+        intervals[bisectLeft(quantile, val_list[i])]++
+      }
+
+      var e = document.getElementById("selectNumber");
+      var selected_user = e.options[e.selectedIndex].value;
+      var selected_index = e.selectedIndex
+      var selected_idx = bisectLeft(quantile, data[selected_index].forum_interactions)
+
+      //colorlist
+      var colorlist = []
+      for(var i=0;i<20;i++){
+        if(i==selected_idx){
+          colorlist.push('rgba(222,45,38,0.8)')
+        }else{
+          colorlist.push('rgba(204,204,204,1)')
+        }
+      }
+
+      var percent_str = domain[selected_idx]
+      var percent = domain_arrow[selected_idx]
+      var motivational_str = ""
+
+      if(percent == 0){
+        //0
+        var motivational_str = "Looks like you haven't used the forum function! <br>Did you know you can ask questions to instructors and interact with your classmates over at the forum? <br>Give it a try!"
+      }else if(percent >= 5 && percent <= 50){
+        //5--50
+        var motivational_str = "You were among the " + percent_str + " of learners who have least used the forum last week. <br>Interacting with instructors and classmates is strongly advised to support your personal learning. <br>We encourage you to give it another try!"
+      }else if(percent >=55 && percent <= 75){
+        //50--75
+        var motivational_str = "Did you know your use of dicussion forums was above average last week? <br>You ranked among the " + percent_str + " learners who have used forums the most. <br>Good job, keep asking questions and discussing!"
+      }else if(percent >= 80 && percent <= 95){
+        //80--95
+        var motivational_str = "Congratulations! You ranked among the top " + percent_str + " learners who showed the most activity on discussion forums. <br>Good job, and keep it up!"
+      }
+
+
+
+
+
+
+
+
+      var trace1 = {
+        x: domain,
+        y: intervals,
+        marker:{
+          color: colorlist
+        },
+        type: 'bar'
+      };
+
+      var data = [trace1];
+
+      var layout = {
+        title: 'Forum Activity',
+        autosize: false,
+        width: 800,
+        height: 500,
+        annotations: [
+          {
+            x: domain_arrow[selected_idx],
+            y: intervals[selected_idx],
+            xref: 'x',
+            yref: 'y',
+            text: 'You are here',
+            showarrow: true,
+            arrowhead: 7,
+            ax: 0,
+            ay: -40
+          }
+        ],
+        yaxis: {
+          title: {
+            text: 'Forum interactions in the past week',
+          }
+        },
+        xaxis: {
+          title: {
+            text: motivational_str,
+          }
+        }
+      };
+
+      Plotly.newPlot('plotly-div', data, layout);
+
+    });
+  }
+
+  function bisectLeft (array, x) {
+    for (var i = 0; i < array.length; i++) {
+      if (array[i] >= x) return i
+    }
+    return array.length
+  }
+</script>
+</html>
