@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<html>
+<script src="https://d3js.org/d3.v5.min.js"></script>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script src="https://unpkg.com/mathjs@6.2.3/dist/math.min.js"></script>
+
+<style>
+.inner {
+  width: 50%;
+  margin: 0 auto;
+}
+
+.fade-in {
+	opacity: 1;
+	animation-name: fadeInOpacity;
+	animation-iteration-count: 1;
+	animation-timing-function: ease-in;
+	animation-duration: 2s;
+}
+
+@keyframes fadeInOpacity {
+	0% {
+		opacity: 0;
+	}
+	100% {
+		opacity: 1;
+	}
+}
+
+</style>
+
+<head>
+<button onclick="initialize()">Initialize</button>
+<button onclick="plot()">Plot</button>
+<form id="myForm">
+  <select id="selectNumber">
+    <option>Choose an user</option>
+  </select>
+</form>
+</head>
+
+<div id="plotly-div" class=inner></div>
+
+
+<script type="text/javascript">
+  function initialize(){
+    d3.csv("forum.csv").then(function(data) {
+      ulist = []
+      for(var i=0;i<data.length;i++) {ulist.push(data[i].username)}
+      var select = document.getElementById("selectNumber");
+      for(var i = 0; i < ulist.length; i++) {
+        var opt = ulist[i];
+        var el = document.createElement("option");
+        el.textContent = opt;
+        el.value = opt;
+        select.appendChild(el);
+      }
+    });
+  }
+
+
+  function plot(){
+      //colorlist
+      var values = [14, 63]
+
+      var colorlist = ['rgba(204,204,204,1)', 'rgba(222,45,38,0.8)']
+      var labels = ['Last week', 'Current week']
+
+
+
+      var trace1 = {
+        x: labels,
+        y: values,
+        marker:{
+          color: colorlist
+        },
+        type: 'bar'
+      };
+
+      var data = [trace1];
+
+      var layout = {
+        title: 'Forum Activity',
+        autosize: false,
+        width: 800,
+        height: 500,
+        yaxis: {
+          title: {
+            text: 'Forum interactions in the past week',
+          }
+        },
+      };
+
+      Plotly.newPlot('plotly-div', data, layout);
+
+  }
+
+  function bisectLeft (array, x) {
+    for (var i = 0; i < array.length; i++) {
+      if (array[i] >= x) return i
+    }
+    return array.length
+  }
+</script>
+</html>
